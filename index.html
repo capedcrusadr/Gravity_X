@@ -427,10 +427,9 @@
             playsinline
             webkit-playsinline
             preload="auto"
-            style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center;"
+            style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center;transform:translateZ(0);-webkit-transform:translateZ(0);will-change:transform;"
           >
             <source src="scenic_1.mp4" type="video/mp4" />
-            <source src="scenic_1.MP4" type="video/mp4" />
             <source src="https://cdn.coverr.co/videos/coverr-sun-shining-over-the-ocean-2178/1080p.mp4" type="video/mp4" />
           </video>
           <div class="absolute inset-0 bg-black/45"></div>
@@ -758,12 +757,12 @@
                 <span class="text-lg font-medium text-foreground group-hover:text-black transition-colors">Call Us</span>
               </a>
               
-              <a href="https://wa.me/9600182652" target="_blank" rel="noopener" class="group flex flex-col items-center justify-center p-8 md:p-10 border border-border rounded-[4px] bg-card hover:border-black transition-all duration-300">
+              <a href="https://wa.me/919500147241" target="_blank" rel="noopener" class="group flex flex-col items-center justify-center p-8 md:p-10 border border-border rounded-[4px] bg-card hover:border-black transition-all duration-300">
                 <span class="text-[9px] font-light tracking-[0.3em] text-muted-foreground uppercase mb-3">Message</span>
                 <span class="text-lg font-medium text-foreground group-hover:text-black transition-colors">WhatsApp</span>
               </a>
 
-              <a href="https://www.instagram.com/gravityx.films?exln=MTB5MjMzZ2Vkc253aQ%3D%3D&utm_source=qr" target="_blank" rel="noopener" class="group flex flex-col items-center justify-center p-8 md:p-10 border border-border rounded-[4px] bg-card hover:border-black transition-all duration-300">
+              <a href="https://www.instagram.com/gravityx.aerial/" target="_blank" rel="noopener" class="group flex flex-col items-center justify-center p-8 md:p-10 border border-border rounded-[4px] bg-card hover:border-black transition-all duration-300">
                 <span class="text-[9px] font-light tracking-[0.3em] text-muted-foreground uppercase mb-3">Social</span>
                 <span class="text-lg font-medium text-foreground group-hover:text-black transition-colors">Instagram</span>
               </a>
@@ -831,6 +830,10 @@
       function initPreloader() {
         const preloader = document.getElementById('preloader');
         if (!preloader) return;
+        if (window.location.search.includes('no_preloader')) {
+          preloader.style.display = 'none';
+          return;
+        }
 
         // Animation ends at ~1.9s (last circle: delay 1.2s + duration 0.7s)
         const MIN_ANIM_MS = 2200;
@@ -841,10 +844,14 @@
           if (revealed) return;
           revealed = true;
 
-          // Preloader position:fixed covers the page — safe to scroll here without any visible jump
-          window.scrollTo(0, 0);
-          document.documentElement.scrollTop = 0;
-          if (document.body) document.body.scrollTop = 0;
+          if (!window.location.hash) {
+            window.scrollTo(0, 0);
+            document.documentElement.scrollTop = 0;
+            if (document.body) document.body.scrollTop = 0;
+          } else {
+            const target = document.querySelector(window.location.hash);
+            if (target) target.scrollIntoView();
+          }
 
           const elapsed = Date.now() - startTime;
           const remaining = Math.max(0, MIN_ANIM_MS - elapsed);
@@ -939,7 +946,9 @@
           heroVideo.setAttribute('webkit-playsinline', '');
 
           const setPlaybackRate = () => {
-            try { heroVideo.playbackRate = 0.75; } catch (e) {}
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
+            const targetRate = isMobile ? 1.0 : 0.85;
+            try { heroVideo.playbackRate = targetRate; } catch (e) {}
           };
           if (heroVideo.readyState >= 1) {
             setPlaybackRate();
