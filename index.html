@@ -9,6 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <title>Gravity X</title>
     <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="preload" as="video" href="scenic_1.mp4" type="video/mp4" />
     <link href="https://fonts.cdnfonts.com/css/nasalization" rel="stylesheet" />
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Michroma&family=Outfit:wght@200;300;400;500;600;700&family=Inter:wght@200;300;400;500;600;700;850&display=swap"
@@ -41,18 +42,8 @@
         window.scrollTo(0, 0);
         document.documentElement.scrollTop = 0;
       });
-      // Also reset on load in case browser restores scroll after our early reset
-      window.addEventListener('load', function() {
-        window.scrollTo(0, 0);
-        document.documentElement.scrollTop = 0;
-        if (document.body) document.body.scrollTop = 0;
-      });
-      // If user navigates via hash on load, scroll to top first
-      if (window.location.hash === '' || window.location.hash === '#top') {
-        window.scrollTo(0, 0);
-      }
 
-            window.onerror = function(message, source, lineno, colno, error) {
+      window.onerror = function(message, source, lineno, colno, error) {
         console.error('Error: ' + message + ' at ' + source + ':' + lineno);
         return false;
       };
@@ -443,6 +434,7 @@
         <div class="absolute inset-0 w-full h-full" style="position:absolute;top:0;left:0;right:0;bottom:0;">
           <video
             id="hero-video"
+            src="scenic_1.mp4"
             autoplay
             muted
             loop
@@ -453,7 +445,6 @@
             style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center;transform:translateZ(0);-webkit-transform:translateZ(0);"
           >
             <source src="scenic_1.mp4" type="video/mp4" />
-            <source src="https://cdn.coverr.co/videos/coverr-sun-shining-over-the-ocean-2178/1080p.mp4" type="video/mp4" />
           </video>
           <script>
             (function() {
@@ -868,56 +859,55 @@
           return;
         }
 
-        // Animation ends at ~1.9s (last circle: delay 1.2s + duration 0.7s)
-        const MIN_ANIM_MS = 2200;
-        const startTime = Date.now();
+        const heroVideo = document.getElementById('hero-video');
         let revealed = false;
 
         function revealPage() {
           if (revealed) return;
           revealed = true;
 
-          if (!window.location.hash) {
-            window.scrollTo(0, 0);
-            document.documentElement.scrollTop = 0;
-            if (document.body) document.body.scrollTop = 0;
-          } else {
+          // Hash navigation support: only scroll if an explicit in-page target was requested
+          if (window.location.hash && window.location.hash !== '#top' && window.location.hash !== '#') {
             const target = document.querySelector(window.location.hash);
             if (target) target.scrollIntoView();
           }
 
-          const elapsed = Date.now() - startTime;
-          const remaining = Math.max(0, MIN_ANIM_MS - elapsed);
+          // Immediate hero video playback verification
+          if (heroVideo && heroVideo.paused) {
+            heroVideo.play().catch(() => {});
+          }
+
+          // Instantly disable preloader pointer events so touches/scrolls pass through
+          preloader.style.pointerEvents = 'none';
+          preloader.style.transition = 'opacity 0.4s ease-out';
+          preloader.style.opacity = '0';
 
           setTimeout(() => {
-            const heroVideo = document.getElementById('hero-video');
+            preloader.style.display = 'none';
             if (heroVideo && heroVideo.paused) {
               heroVideo.play().catch(() => {});
             }
-            preloader.style.transition = 'opacity 0.55s ease-in-out';
-            preloader.style.opacity = '0';
-            setTimeout(() => { 
-              preloader.style.display = 'none'; 
-              if (heroVideo && heroVideo.paused) {
-                heroVideo.play().catch(() => {});
-              }
-              if (typeof window.updateHUDDimensions === 'function') {
-                window.updateHUDDimensions();
-              }
-            }, 560);
-          }, remaining);
+            if (typeof window.updateHUDDimensions === 'function') {
+              window.updateHUDDimensions();
+            }
+          }, 420);
         }
 
-        // Use DOMContentLoaded + double requestAnimationFrame instead of window.load.
-        // window.load waits for the Tailwind CDN script (~400KB) to finish — very slow on mobile.
-        // DOMContentLoaded fires as soon as HTML is parsed.
-        // The double RAF gives the browser 2 paint cycles to complete its own scroll
-        // restoration before we call scrollTo(0,0), so our reset is always the final word.
+        // Fast-path: reveal immediately when video frames are flowing
+        if (heroVideo) {
+          if (heroVideo.readyState >= 2 || !heroVideo.paused) {
+            revealPage();
+          } else {
+            heroVideo.addEventListener('playing', revealPage, { once: true });
+            heroVideo.addEventListener('loadeddata', revealPage, { once: true });
+            heroVideo.addEventListener('canplay', revealPage, { once: true });
+          }
+        }
+
+        // Fast reveal on DOMContentLoaded or RAF
         function waitForRAFAndReveal() {
           requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              revealPage();
-            });
+            revealPage();
           });
         }
 
@@ -926,6 +916,9 @@
         } else {
           document.addEventListener('DOMContentLoaded', waitForRAFAndReveal, { once: true });
         }
+
+        // Safety fallback timeout: never keep preloader visible more than 500ms
+        setTimeout(revealPage, 500);
       }
 
       function initNav() {
