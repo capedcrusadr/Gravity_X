@@ -94,13 +94,15 @@
       html {
         background-color: #000000;
         overscroll-behavior-x: none;
+        -webkit-overflow-scrolling: touch;
       }
       body {
         background-color: #ffffff;
         color: #0c0c0d;
         -webkit-font-smoothing: antialiased;
         overflow-x: hidden;
-        overscroll-behavior: none;
+        overscroll-behavior-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
       body, button, input, select, textarea, h1, h2, h3, h4, h5, h6, a {
         font-family: "Google Sans Flex", "Product Sans", "Google Sans", "Outfit", "Inter", sans-serif !important;
@@ -136,6 +138,17 @@
         .wm-tagline-desktop { display: block !important; }
         .wm-tagline-mobile { display: none !important; }
       }
+
+      .brand-wm-text {
+        font-family: 'Nasalization Rg', 'Nasalization', 'nasalization', sans-serif;
+        font-weight: 400;
+        font-size: clamp(20px, 8.2vw, 48px);
+      }
+      @media (min-width: 640px) {
+        .brand-wm-text {
+          font-size: clamp(30px, 12.8vw, 260px) !important;
+        }
+      }
       
       @keyframes drawPath {
         to { stroke-dashoffset: 0; opacity: 1; }
@@ -162,7 +175,7 @@
         transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
       }
 
-      #bg-compass, #hud-alt-indicator, #hud-right-container, #main-header {
+      #bg-compass, #hud-right-container, #main-header {
         will-change: transform;
         transform: translateZ(0);
         -webkit-backface-visibility: hidden;
@@ -171,7 +184,10 @@
 
       #hud-alt-indicator {
         will-change: transform;
-        transition: none !important;
+        transform: translateZ(0);
+        transition: transform 0.08s linear !important;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
       }
 
       /* MANIFOLD EXTENDED CF (Adobe Fonts) for all general text */
@@ -252,7 +268,7 @@
     >
       <div class="flex flex-col items-end gap-1 text-[8px] md:text-[9px] tracking-[0.2em] text-black mr-1 md:mr-2">
         <span class="text-black font-semibold">ALTITUDE</span>
-        <span id="hud-alt-num" class="text-[10px] md:text-xs text-black font-bold tracking-normal">120m</span>
+        <span id="hud-alt-num" class="text-[10px] md:text-xs text-black font-bold tracking-normal" style="font-variant-numeric: tabular-nums; display: inline-block; min-width: 32px; text-align: right;">120m</span>
       </div>
       <div id="hud-alt-track" class="relative w-2 md:w-3 h-36 md:h-48 border-r border-black flex flex-col justify-between py-1 text-[7px] md:text-[8px] text-black">
         <span class="w-1.5 md:w-2 h-px bg-black self-end"></span>
@@ -459,7 +475,7 @@
               class="portfolio-card group relative block w-full overflow-hidden bg-card aspect-[16/9] border border-border rounded-[4px] shadow-sm"
             >
               <video
-                autoplay muted loop playsinline webkit-playsinline
+                autoplay muted loop playsinline webkit-playsinline preload="metadata"
                 class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-[1.03]"
               >
                 <source src="Wedding.MP4" type="video/mp4" />
@@ -517,7 +533,7 @@
               class="portfolio-card group relative block w-full overflow-hidden bg-card aspect-[16/9] border border-border rounded-[4px] shadow-sm"
             >
               <video
-                autoplay muted loop playsinline webkit-playsinline
+                autoplay muted loop playsinline webkit-playsinline preload="metadata"
                 class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-[1.03]"
               >
                 <source src="Nature.MP4" type="video/mp4" />
@@ -576,7 +592,7 @@
               class="portfolio-card group relative block w-full overflow-hidden bg-card aspect-[16/9] border border-border rounded-[4px] shadow-sm"
             >
               <video
-                autoplay muted loop playsinline webkit-playsinline
+                autoplay muted loop playsinline webkit-playsinline preload="metadata"
                 class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-[1.03]"
               >
                 <source src="Industrial.MP4" type="video/mp4" />
@@ -634,7 +650,7 @@
               class="portfolio-card group relative block w-full overflow-hidden bg-card aspect-[16/9] border border-border rounded-[4px] shadow-sm"
             >
               <video
-                autoplay muted loop playsinline webkit-playsinline
+                autoplay muted loop playsinline webkit-playsinline preload="metadata"
                 class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-[1.03]"
               >
                 <source src="Monuments.MP4" type="video/mp4" />
@@ -776,10 +792,8 @@
         <div style="width: 100%; display: flex; align-items: center; justify-content: center; text-align: center; margin: 0 auto; overflow: visible;">
           <span
             aria-label="Gravity X"
+            class="brand-wm-text"
             style="
-              font-family: 'Nasalization Rg', 'Nasalization', 'nasalization', sans-serif;
-              font-weight: 400;
-              font-size: clamp(30px, 12.8vw, 260px);
               letter-spacing: 0.05em;
               color: #18181b;
               white-space: nowrap;
@@ -809,8 +823,8 @@
             A&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;E&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;I&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;L&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;C&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;I&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;N&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;E&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;M&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;T&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;O&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;G&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;P&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;H&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Y
           </p>
           <!-- Mobile Tagline (Never cropped on any phone screen, high letter spacing, perfectly centered) -->
-          <p class="wm-tagline-mobile block sm:hidden" style="font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: clamp(9px, 2.7vw, 11.5px); letter-spacing: 0.32em; text-transform: uppercase; color: #18181b; margin: 0; white-space: nowrap; line-height: 1;">
-            AERIAL&nbsp;&nbsp;&nbsp;&nbsp;CINEMATOGRAPHY
+          <p class="wm-tagline-mobile block sm:hidden" style="font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: clamp(8px, 2.3vw, 10.5px); letter-spacing: 0.45em; padding-left: 0.45em; word-spacing: 0.6em; text-transform: uppercase; color: #18181b; margin: 0; white-space: nowrap; line-height: 1; text-align: center;">
+            AERIAL CINEMATOGRAPHY
           </p>
         </div>
       </section>
@@ -859,7 +873,16 @@
           setTimeout(() => {
             preloader.style.transition = 'opacity 0.55s ease-in-out';
             preloader.style.opacity = '0';
-            setTimeout(() => { preloader.style.display = 'none'; }, 560);
+            setTimeout(() => { 
+              preloader.style.display = 'none'; 
+              const heroVideo = document.getElementById('hero-video');
+              if (heroVideo && heroVideo.paused) {
+                heroVideo.play().catch(() => {});
+              }
+              if (typeof window.updateHUDDimensions === 'function') {
+                window.updateHUDDimensions();
+              }
+            }, 560);
           }, remaining);
         }
 
@@ -957,6 +980,7 @@
           }
 
           const startPlay = () => {
+            heroVideo.muted = true;
             const playPromise = heroVideo.play();
             if (playPromise !== undefined) {
               playPromise.then(() => {
@@ -967,6 +991,12 @@
             }
           };
 
+          if (heroVideo.readyState >= 2) {
+            startPlay();
+          } else {
+            heroVideo.addEventListener('loadeddata', startPlay, { once: true });
+            heroVideo.addEventListener('canplay', startPlay, { once: true });
+          }
           startPlay();
 
           // Responsive user interaction fallbacks for mobile browsers
@@ -1135,8 +1165,10 @@
           }
         }
 
+        window.updateHUDDimensions = updateDimensions;
         window.addEventListener('resize', updateDimensions, { passive: true });
         window.addEventListener('orientationchange', updateDimensions, { passive: true });
+        window.addEventListener('load', updateDimensions, { passive: true });
 
         let isHeaderScrolled = false;
         let hudVisible = false;
@@ -1190,8 +1222,8 @@
             altIndicator.style.transform = `translate3d(50%, 0px, 0)`;
           }
 
-          // 3. Compass smooth rotation (calibrated gentle motion)
-          if (compass) {
+          // 3. Compass smooth rotation (calibrated gentle motion, only on desktop to keep mobile scrolling 60fps)
+          if (compass && window.innerWidth >= 768) {
             compass.style.transform = `translate3d(-50%, -50%, 0) rotate(${currentScroll * 0.032}deg)`;
           }
 
@@ -1241,10 +1273,62 @@
         });
       }
 
+      function initPortfolioVideos() {
+        const portfolioVideos = document.querySelectorAll('.portfolio-card video');
+        if (!portfolioVideos.length) return;
+
+        portfolioVideos.forEach(v => {
+          v.defaultMuted = true;
+          v.muted = true;
+          v.playsInline = true;
+          v.setAttribute('muted', '');
+          v.setAttribute('playsinline', '');
+          v.setAttribute('webkit-playsinline', '');
+        });
+
+        if ('IntersectionObserver' in window) {
+          const videoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+              const video = entry.target;
+              if (entry.isIntersecting) {
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                  playPromise.catch(() => {});
+                }
+              } else {
+                if (!video.paused) {
+                  video.pause();
+                }
+              }
+            });
+          }, {
+            threshold: 0.1,
+            rootMargin: '150px 0px 150px 0px'
+          });
+
+          portfolioVideos.forEach(v => videoObserver.observe(v));
+        }
+
+        // Proactive user interaction trigger for mobile browsers
+        const triggerPortfolioPlay = () => {
+          portfolioVideos.forEach(v => {
+            const rect = v.getBoundingClientRect();
+            if (rect.top < window.innerHeight && rect.bottom > 0) {
+              v.play().catch(() => {});
+            }
+          });
+          window.removeEventListener('touchstart', triggerPortfolioPlay);
+          window.removeEventListener('scroll', triggerPortfolioPlay);
+        };
+        window.addEventListener('touchstart', triggerPortfolioPlay, { passive: true });
+        window.addEventListener('scroll', triggerPortfolioPlay, { passive: true });
+      }
+
       document.addEventListener('DOMContentLoaded', () => {
         initPreloader();
         initNav();
         initHero();
+        initPortfolioVideos();
         initScrollReveal();
         initGalleryModal();
         initHUD();
