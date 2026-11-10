@@ -433,7 +433,6 @@
         <div class="absolute inset-0 w-full h-full" style="position:absolute;top:0;left:0;right:0;bottom:0;">
           <video
             id="hero-video"
-            src="scenic_1.mp4"
             autoplay
             muted
             loop
@@ -441,23 +440,11 @@
             webkit-playsinline
             x5-playsinline
             preload="auto"
+            poster="hero_poster.jpg"
             style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center;transform:translateZ(0);-webkit-transform:translateZ(0);"
           >
             <source src="scenic_1.mp4" type="video/mp4" />
           </video>
-          <script>
-            (function() {
-              var v = document.getElementById('hero-video');
-              if (v) {
-                v.muted = true;
-                v.defaultMuted = true;
-                v.playsInline = true;
-                try { v.load(); } catch(e) {}
-                var p = v.play();
-                if (p !== undefined) p.catch(function() {});
-              }
-            })();
-          </script>
           <div class="absolute inset-0 bg-black/45"></div>
         </div>
         <div class="relative z-10 flex flex-col items-center justify-center px-6 text-center" style="position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;">
@@ -861,8 +848,6 @@
 
         const heroVideo = document.getElementById('hero-video');
         const ANIM_DURATION = 1800; // Complete drone SVG & brand animation time
-        let animationDone = false;
-        let videoPlaying = false;
         let revealed = false;
 
         function revealPage() {
@@ -896,64 +881,15 @@
           }, 460);
         }
 
-        function checkReady() {
-          if (revealed) return;
-          // Reveal immediately right after loading animation IF video is actively playing frames
-          if (animationDone && videoPlaying) {
-            revealPage();
-          }
+        // Immediately prompt video to start decoding and playing in background
+        if (heroVideo && heroVideo.paused) {
+          heroVideo.play().catch(() => {});
         }
 
-        // 1. Mark animation completed after 1.8s
+        // Reveal immediately right after loading animation completes
         setTimeout(() => {
-          animationDone = true;
-          checkReady();
+          revealPage();
         }, ANIM_DURATION);
-
-        // 2. Track when hero video actually renders active moving frames
-        function checkVideoFrameFlow() {
-          if (videoPlaying || revealed) return;
-          if (heroVideo && !heroVideo.paused && heroVideo.currentTime > 0.08) {
-            videoPlaying = true;
-            checkReady();
-            return;
-          }
-          requestAnimationFrame(checkVideoFrameFlow);
-        }
-
-        if (heroVideo) {
-          heroVideo.muted = true;
-          heroVideo.defaultMuted = true;
-          heroVideo.playsInline = true;
-
-          const p = heroVideo.play();
-          if (p !== undefined) {
-            p.then(() => {
-              if (heroVideo.currentTime > 0.08) {
-                videoPlaying = true;
-                checkReady();
-              }
-            }).catch(() => {});
-          }
-
-          if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
-            heroVideo.requestVideoFrameCallback(() => {
-              heroVideo.requestVideoFrameCallback(() => {
-                videoPlaying = true;
-                checkReady();
-              });
-            });
-          }
-
-          heroVideo.addEventListener('timeupdate', () => {
-            if (heroVideo.currentTime > 0.08) {
-              videoPlaying = true;
-              checkReady();
-            }
-          });
-
-          requestAnimationFrame(checkVideoFrameFlow);
-        }
 
         // Tap or touch during loading immediately starts video in case of strict mobile policy
         const startVideoOnTouch = () => {
@@ -963,13 +899,6 @@
         };
         window.addEventListener('touchstart', startVideoOnTouch, { passive: true });
         window.addEventListener('click', startVideoOnTouch, { passive: true });
-
-        // Safety fallback timeout: never hold screen longer than 3.5s under any circumstance
-        setTimeout(() => {
-          animationDone = true;
-          videoPlaying = true;
-          revealPage();
-        }, 3500);
       }
 
       function initNav() {
