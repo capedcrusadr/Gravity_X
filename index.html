@@ -95,6 +95,7 @@
         background-color: #000000;
         overscroll-behavior-x: none;
         -webkit-overflow-scrolling: touch;
+        scroll-behavior: auto;
       }
       body {
         background-color: #ffffff;
@@ -103,6 +104,14 @@
         overflow-x: hidden;
         overscroll-behavior-y: auto;
         -webkit-overflow-scrolling: touch;
+      }
+      /* Prevent mobile video playback button / play symbol overlay */
+      video::-webkit-media-controls,
+      video::-webkit-media-controls-start-playback-button,
+      video::-webkit-media-controls-play-button {
+        display: none !important;
+        -webkit-appearance: none !important;
+        opacity: 0 !important;
       }
       body, button, input, select, textarea, h1, h2, h3, h4, h5, h6, a {
         font-family: "Google Sans Flex", "Product Sans", "Google Sans", "Outfit", "Inter", sans-serif !important;
@@ -175,17 +184,14 @@
         transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
       }
 
-      #bg-compass, #hud-right-container, #main-header {
-        will-change: transform;
+      #bg-compass, #hud-right-container {
         transform: translateZ(0);
         -webkit-backface-visibility: hidden;
         backface-visibility: hidden;
       }
 
       #hud-alt-indicator {
-        will-change: transform;
         transform: translateZ(0);
-        transition: transform 0.08s linear !important;
         -webkit-backface-visibility: hidden;
         backface-visibility: hidden;
       }
@@ -442,12 +448,25 @@
             loop
             playsinline
             webkit-playsinline
+            x5-playsinline
             preload="auto"
-            style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center;transform:translateZ(0);-webkit-transform:translateZ(0);will-change:transform;"
+            style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center;transform:translateZ(0);-webkit-transform:translateZ(0);"
           >
             <source src="scenic_1.mp4" type="video/mp4" />
             <source src="https://cdn.coverr.co/videos/coverr-sun-shining-over-the-ocean-2178/1080p.mp4" type="video/mp4" />
           </video>
+          <script>
+            (function() {
+              var v = document.getElementById('hero-video');
+              if (v) {
+                v.muted = true;
+                v.defaultMuted = true;
+                v.playsInline = true;
+                var p = v.play();
+                if (p !== undefined) p.catch(function() {});
+              }
+            })();
+          </script>
           <div class="absolute inset-0 bg-black/45"></div>
         </div>
         <div class="relative z-10 flex flex-col items-center justify-center px-6 text-center" style="position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;">
@@ -822,9 +841,9 @@
           <p class="wm-tagline-desktop hidden sm:block" style="font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: clamp(12px, 1.3vw, 20px); text-transform: uppercase; color: #18181b; margin: 0; white-space: nowrap; line-height: 1;">
             A&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;E&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;I&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;L&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;C&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;I&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;N&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;E&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;M&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;T&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;O&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;G&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;P&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;H&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Y
           </p>
-          <!-- Mobile Tagline (Never cropped on any phone screen, high letter spacing, perfectly centered) -->
-          <p class="wm-tagline-mobile block sm:hidden" style="font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: clamp(8px, 2.3vw, 10.5px); letter-spacing: 0.45em; padding-left: 0.45em; word-spacing: 0.6em; text-transform: uppercase; color: #18181b; margin: 0; white-space: nowrap; line-height: 1; text-align: center;">
-            AERIAL CINEMATOGRAPHY
+          <!-- Mobile Tagline (Matches desktop letter-by-letter spacing style with 3-space gaps) -->
+          <p class="wm-tagline-mobile block sm:hidden" style="font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: clamp(6px, 1.85vw, 9.5px); text-transform: uppercase; color: #18181b; margin: 0; white-space: nowrap; line-height: 1; text-align: center;">
+            A&nbsp;&nbsp;&nbsp;E&nbsp;&nbsp;&nbsp;R&nbsp;&nbsp;&nbsp;I&nbsp;&nbsp;&nbsp;A&nbsp;&nbsp;&nbsp;L&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;C&nbsp;&nbsp;&nbsp;I&nbsp;&nbsp;&nbsp;N&nbsp;&nbsp;&nbsp;E&nbsp;&nbsp;&nbsp;M&nbsp;&nbsp;&nbsp;A&nbsp;&nbsp;&nbsp;T&nbsp;&nbsp;&nbsp;O&nbsp;&nbsp;&nbsp;G&nbsp;&nbsp;&nbsp;R&nbsp;&nbsp;&nbsp;A&nbsp;&nbsp;&nbsp;P&nbsp;&nbsp;&nbsp;H&nbsp;&nbsp;&nbsp;Y
           </p>
         </div>
       </section>
@@ -871,11 +890,14 @@
           const remaining = Math.max(0, MIN_ANIM_MS - elapsed);
 
           setTimeout(() => {
+            const heroVideo = document.getElementById('hero-video');
+            if (heroVideo && heroVideo.paused) {
+              heroVideo.play().catch(() => {});
+            }
             preloader.style.transition = 'opacity 0.55s ease-in-out';
             preloader.style.opacity = '0';
             setTimeout(() => { 
               preloader.style.display = 'none'; 
-              const heroVideo = document.getElementById('hero-video');
               if (heroVideo && heroVideo.paused) {
                 heroVideo.play().catch(() => {});
               }
@@ -1174,24 +1196,53 @@
         let hudVisible = false;
         let lastAlt = -1;
         let ticking = false;
+        let currentIndicatorY = 0;
+        let targetIndicatorY = 0;
+        let hudAnimationRunning = false;
+
+        function updateHUDIndicator() {
+          const delta = targetIndicatorY - currentIndicatorY;
+          if (Math.abs(delta) > 0.05) {
+            // Automatic watch smooth continuous glide
+            currentIndicatorY += delta * 0.18;
+            altIndicator.style.transform = `translate3d(50%, ${currentIndicatorY.toFixed(2)}px, 0)`;
+            const currentAlt = Math.max(0, Math.min(120, Math.round(120 - (currentIndicatorY / trackHeight) * 120)));
+            if (currentAlt !== lastAlt) {
+              altNum.textContent = `${currentAlt}m`;
+              lastAlt = currentAlt;
+            }
+            requestAnimationFrame(updateHUDIndicator);
+          } else {
+            currentIndicatorY = targetIndicatorY;
+            altIndicator.style.transform = `translate3d(50%, ${currentIndicatorY.toFixed(2)}px, 0)`;
+            const currentAlt = Math.max(0, Math.min(120, Math.round(120 - (currentIndicatorY / trackHeight) * 120)));
+            if (currentAlt !== lastAlt) {
+              altNum.textContent = `${currentAlt}m`;
+              lastAlt = currentAlt;
+            }
+            hudAnimationRunning = false;
+          }
+        }
 
         function onScrollFrame() {
           const currentScroll = window.scrollY || window.pageYOffset || 0;
 
-          // 1. Header blur/background transition (only triggers on boundary crossing)
+          // 1. Header blur/background transition (only triggers on boundary crossing, lightweight on mobile)
           if (header) {
+            const isDesktop = window.innerWidth >= 768;
             if (currentScroll > 40 && !isHeaderScrolled) {
               header.classList.remove('bg-transparent');
-              header.classList.add('bg-black/90', 'backdrop-blur-md');
+              header.classList.add(isDesktop ? 'bg-black/90' : 'bg-black/95');
+              if (isDesktop) header.classList.add('backdrop-blur-md');
               isHeaderScrolled = true;
             } else if (currentScroll <= 40 && isHeaderScrolled) {
-              header.classList.remove('bg-black/90', 'backdrop-blur-md');
+              header.classList.remove('bg-black/90', 'bg-black/95', 'backdrop-blur-md');
               header.classList.add('bg-transparent');
               isHeaderScrolled = false;
             }
           }
 
-          // 2. Altitude Meter — zero-lag GPU-composited tracking
+          // 2. Altitude Meter — automatic watch smooth continuous tracking
           if (currentScroll > startScroll) {
             if (!hudVisible) {
               hudRight.classList.remove('opacity-0', 'pointer-events-none');
@@ -1200,26 +1251,22 @@
             }
 
             const relativeScroll = Math.min(1, Math.max(0, (currentScroll - startScroll) / scrollableArea));
-            const currentAlt = Math.round(120 - relativeScroll * 120);
-
-            if (currentAlt !== lastAlt) {
-              altNum.textContent = `${currentAlt}m`;
-              lastAlt = currentAlt;
+            targetIndicatorY = relativeScroll * trackHeight;
+            if (!hudAnimationRunning) {
+              hudAnimationRunning = true;
+              requestAnimationFrame(updateHUDIndicator);
             }
-
-            const indicatorOffsetY = relativeScroll * trackHeight;
-            altIndicator.style.transform = `translate3d(50%, ${indicatorOffsetY}px, 0)`;
           } else {
             if (hudVisible) {
               hudRight.classList.remove('opacity-60');
               hudRight.classList.add('opacity-0', 'pointer-events-none');
               hudVisible = false;
             }
-            if (lastAlt !== 120) {
-              altNum.textContent = "120m";
-              lastAlt = 120;
+            targetIndicatorY = 0;
+            if (!hudAnimationRunning) {
+              hudAnimationRunning = true;
+              requestAnimationFrame(updateHUDIndicator);
             }
-            altIndicator.style.transform = `translate3d(50%, 0px, 0)`;
           }
 
           // 3. Compass smooth rotation (calibrated gentle motion, only on desktop to keep mobile scrolling 60fps)
