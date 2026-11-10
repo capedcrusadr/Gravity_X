@@ -9,7 +9,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <title>Gravity X</title>
     <link rel="icon" type="image/png" href="favicon.png" />
-    <link rel="preload" as="video" href="scenic_1.mp4" type="video/mp4" />
     <link href="https://fonts.cdnfonts.com/css/nasalization" rel="stylesheet" />
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Michroma&family=Outfit:wght@200;300;400;500;600;700&family=Inter:wght@200;300;400;500;600;700;850&display=swap"
@@ -453,6 +452,7 @@
                 v.muted = true;
                 v.defaultMuted = true;
                 v.playsInline = true;
+                try { v.load(); } catch(e) {}
                 var p = v.play();
                 if (p !== undefined) p.catch(function() {});
               }
@@ -910,7 +910,17 @@
           checkReady();
         }, ANIM_DURATION);
 
-        // 2. Track when hero video actually renders active frames
+        // 2. Track when hero video actually renders active moving frames
+        function checkVideoFrameFlow() {
+          if (videoPlaying || revealed) return;
+          if (heroVideo && !heroVideo.paused && heroVideo.currentTime > 0.08) {
+            videoPlaying = true;
+            checkReady();
+            return;
+          }
+          requestAnimationFrame(checkVideoFrameFlow);
+        }
+
         if (heroVideo) {
           heroVideo.muted = true;
           heroVideo.defaultMuted = true;
@@ -919,7 +929,7 @@
           const p = heroVideo.play();
           if (p !== undefined) {
             p.then(() => {
-              if (heroVideo.currentTime > 0) {
+              if (heroVideo.currentTime > 0.08) {
                 videoPlaying = true;
                 checkReady();
               }
@@ -928,24 +938,21 @@
 
           if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
             heroVideo.requestVideoFrameCallback(() => {
-              videoPlaying = true;
-              checkReady();
+              heroVideo.requestVideoFrameCallback(() => {
+                videoPlaying = true;
+                checkReady();
+              });
             });
           }
 
           heroVideo.addEventListener('timeupdate', () => {
-            if (heroVideo.currentTime > 0) {
+            if (heroVideo.currentTime > 0.08) {
               videoPlaying = true;
               checkReady();
             }
           });
 
-          heroVideo.addEventListener('playing', () => {
-            setTimeout(() => {
-              videoPlaying = true;
-              checkReady();
-            }, 60);
-          });
+          requestAnimationFrame(checkVideoFrameFlow);
         }
 
         // Tap or touch during loading immediately starts video in case of strict mobile policy
