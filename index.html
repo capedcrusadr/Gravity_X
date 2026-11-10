@@ -860,6 +860,9 @@
         }
 
         const heroVideo = document.getElementById('hero-video');
+        const ANIM_DURATION = 1800; // Complete drone SVG & brand animation time
+        let animationDone = false;
+        let videoPlaying = false;
         let revealed = false;
 
         function revealPage() {
@@ -872,14 +875,14 @@
             if (target) target.scrollIntoView();
           }
 
-          // Immediate hero video playback verification
+          // Ensure hero video is playing smoothly
           if (heroVideo && heroVideo.paused) {
             heroVideo.play().catch(() => {});
           }
 
-          // Instantly disable preloader pointer events so touches/scrolls pass through
+          // Instantly disable preloader pointer events so interactions are immediate
           preloader.style.pointerEvents = 'none';
-          preloader.style.transition = 'opacity 0.4s ease-out';
+          preloader.style.transition = 'opacity 0.45s ease-out';
           preloader.style.opacity = '0';
 
           setTimeout(() => {
@@ -890,35 +893,76 @@
             if (typeof window.updateHUDDimensions === 'function') {
               window.updateHUDDimensions();
             }
-          }, 420);
+          }, 460);
         }
 
-        // Fast-path: reveal immediately when video frames are flowing
-        if (heroVideo) {
-          if (heroVideo.readyState >= 2 || !heroVideo.paused) {
+        function checkReady() {
+          if (revealed) return;
+          // Reveal immediately right after loading animation IF video is actively playing frames
+          if (animationDone && videoPlaying) {
             revealPage();
-          } else {
-            heroVideo.addEventListener('playing', revealPage, { once: true });
-            heroVideo.addEventListener('loadeddata', revealPage, { once: true });
-            heroVideo.addEventListener('canplay', revealPage, { once: true });
           }
         }
 
-        // Fast reveal on DOMContentLoaded or RAF
-        function waitForRAFAndReveal() {
-          requestAnimationFrame(() => {
-            revealPage();
+        // 1. Mark animation completed after 1.8s
+        setTimeout(() => {
+          animationDone = true;
+          checkReady();
+        }, ANIM_DURATION);
+
+        // 2. Track when hero video actually renders active frames
+        if (heroVideo) {
+          heroVideo.muted = true;
+          heroVideo.defaultMuted = true;
+          heroVideo.playsInline = true;
+
+          const p = heroVideo.play();
+          if (p !== undefined) {
+            p.then(() => {
+              if (heroVideo.currentTime > 0) {
+                videoPlaying = true;
+                checkReady();
+              }
+            }).catch(() => {});
+          }
+
+          if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+            heroVideo.requestVideoFrameCallback(() => {
+              videoPlaying = true;
+              checkReady();
+            });
+          }
+
+          heroVideo.addEventListener('timeupdate', () => {
+            if (heroVideo.currentTime > 0) {
+              videoPlaying = true;
+              checkReady();
+            }
+          });
+
+          heroVideo.addEventListener('playing', () => {
+            setTimeout(() => {
+              videoPlaying = true;
+              checkReady();
+            }, 60);
           });
         }
 
-        if (document.readyState !== 'loading') {
-          waitForRAFAndReveal();
-        } else {
-          document.addEventListener('DOMContentLoaded', waitForRAFAndReveal, { once: true });
-        }
+        // Tap or touch during loading immediately starts video in case of strict mobile policy
+        const startVideoOnTouch = () => {
+          if (heroVideo && heroVideo.paused) {
+            heroVideo.play().catch(() => {});
+          }
+        };
+        window.addEventListener('touchstart', startVideoOnTouch, { passive: true });
+        window.addEventListener('click', startVideoOnTouch, { passive: true });
 
-        // Safety fallback timeout: never keep preloader visible more than 500ms
-        setTimeout(revealPage, 500);
+        // Safety fallback timeout: never hold screen longer than 3.5s under any circumstance
+        setTimeout(() => {
+          animationDone = true;
+          videoPlaying = true;
+          revealPage();
+        }, 3500);
       }
 
       function initNav() {
@@ -986,7 +1030,9 @@
           const setPlaybackRate = () => {
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
             const targetRate = isMobile ? 1.0 : 0.85;
-            try { heroVideo.playbackRate = targetRate; } catch (e) {}
+            if (targetRate !== 1.0) {
+              try { heroVideo.playbackRate = targetRate; } catch (e) {}
+            }
           };
           if (heroVideo.readyState >= 1) {
             setPlaybackRate();
